@@ -17,7 +17,7 @@ from datetime import datetime
 
 # 1a. Paste the FULL path to your Google credentials JSON file
 # FIX: Corrected this line to use os.environ
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\shamb\Downloads\ai\ttsbot-471404-39e4ea704298.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"D:\sih\agri_predict_app\body-sync-ai-90\ttsbot-471404-39e4ea704298.json"
 
 # 1b. Paste your Gemini API key
 GEMINI_API_KEY = "AIzaSyA7mC-8AdeLf_rrOU2moGSU0DZ1LF7Xbws" # Replace with your actual key

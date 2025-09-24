@@ -4,92 +4,64 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import AgentInsights from "@/components/AgentInsights";
-import { MapPin, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import AgentInsights from "@/components/AgentInsights";
+import { X } from "lucide-react";
 
 const EnhancedPainPage = () => {
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedParts, setSelectedParts] = useState<string[]>([]);
   const [severity, setSeverity] = useState([5]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
-  const [bodyPartIntensity, setBodyPartIntensity] = useState<Record<string, number>>({});
+  const navigate = useNavigate();
 
-  // Body parts for quick selection
-  const bodyParts = [
-    "Head", "Neck", "Shoulders", "Upper Back", "Lower Back",
-    "Chest", "Arms", "Hands", "Hips", "Knees", "Feet"
-  ];
-
-  // SVG click areas for body map
   const bodyAreas = [
-    { id: "head", path: "M100 20 C110 20 120 30 120 40 C120 50 110 60 100 60 C90 60 80 50 80 40 C80 30 90 20 100 20 Z", name: "Head" },
-    { id: "neck", path: "M95 60 L105 60 L105 75 L95 75 Z", name: "Neck" },
-    { id: "shoulders", path: "M70 75 L90 75 L90 95 L70 95 Z M110 75 L130 75 L130 95 L110 95 Z", name: "Shoulders" },
-    { id: "chest", path: "M85 75 L115 75 L115 120 L85 120 Z", name: "Chest" },
-    { id: "upper-back", path: "M85 75 L115 75 L115 110 L85 110 Z", name: "Upper Back" },
-    { id: "lower-back", path: "M85 110 L115 110 L115 150 L85 150 Z", name: "Lower Back" },
-    { id: "arms", path: "M70 95 L65 130 L70 160 L90 150 L90 120 Z M110 120 L110 150 L130 160 L135 130 L130 95 Z", name: "Arms" },
-    { id: "hands", path: "M65 160 L75 165 L75 175 L65 175 Z M125 175 L135 175 L135 165 L125 160 Z", name: "Hands" },
-    { id: "hips", path: "M85 150 L115 150 L115 180 L85 180 Z", name: "Hips" },
-    { id: "knees", path: "M85 200 L95 200 L95 220 L85 220 Z M105 200 L115 200 L115 220 L105 220 Z", name: "Knees" },
-    { id: "feet", path: "M85 250 L95 280 L90 285 L85 280 Z M105 280 L115 280 L115 285 L105 285 Z", name: "Feet" }
+    { id: "head", name: "Head", path: "M100 10 C110 10 120 25 120 40 C120 55 110 70 100 70 C90 70 80 55 80 40 C80 25 90 10 100 10 Z" },
+    { id: "neck", name: "Neck", path: "M95 70 L105 70 L105 90 L95 90 Z" },
+    { id: "shoulders", name: "Shoulders", path: "M70 90 L130 90 L130 120 L70 120 Z" },
+    { id: "chest", name: "Chest", path: "M80 120 L120 120 L120 160 L80 160 Z" },
+    { id: "breast-left", name: "Left Breast", path: "M85 120 L95 120 L95 140 L85 140 Z" },
+    { id: "breast-right", name: "Right Breast", path: "M105 120 L115 120 L115 140 L105 140 Z" },
+    { id: "abdomen", name: "Abdomen", path: "M80 160 L120 160 L120 200 L80 200 Z" },
+    { id: "hips", name: "Hips", path: "M75 200 L125 200 L125 230 L75 230 Z" },
+    { id: "inner-thigh-left", name: "Inner Thigh Left", path: "M75 230 L95 230 L95 280 L75 280 Z" },
+    { id: "inner-thigh-right", name: "Inner Thigh Right", path: "M105 230 L125 230 L125 280 L105 280 Z" },
+    { id: "outer-thigh-left", name: "Outer Thigh Left", path: "M65 230 L75 230 L75 280 L65 280 Z" },
+    { id: "outer-thigh-right", name: "Outer Thigh Right", path: "M125 230 L135 230 L135 280 L125 280 Z" },
+    { id: "knees-left", name: "Knee Left", path: "M75 280 L95 280 L95 300 L75 300 Z" },
+    { id: "knees-right", name: "Knee Right", path: "M105 280 L125 280 L125 300 L105 300 Z" },
+    { id: "feet-left", name: "Foot Left", path: "M75 300 L95 300 L95 310 L75 310 Z" },
+    { id: "feet-right", name: "Foot Right", path: "M105 300 L125 300 L125 310 L105 310 Z" },
+    { id: "arms-left", name: "Arm Left", path: "M60 120 L70 120 L70 180 L60 180 Z" },
+    { id: "arms-right", name: "Arm Right", path: "M130 120 L140 120 L140 180 L130 180 Z" },
+    { id: "hands-left", name: "Hand Left", path: "M60 180 L70 180 L70 200 L60 200 Z" },
+    { id: "hands-right", name: "Hand Right", path: "M130 180 L140 180 L140 200 L130 200 Z" },
   ];
 
-  const handleBodyPartClick = (part: string) => {
-    setSelectedLocations(prev => 
-      prev.includes(part) 
-        ? prev.filter(p => p !== part)
-        : [...prev, part]
+  const togglePart = (name: string) => {
+    setSelectedParts(prev =>
+      prev.includes(name) ? prev.filter(p => p !== name) : [...prev, name]
     );
   };
 
-  const handleBodyAreaClick = (areaName: string) => {
-    handleBodyPartClick(areaName);
-    // Set intensity for heat map visualization
-    setBodyPartIntensity(prev => ({
-      ...prev,
-      [areaName]: severity[0]
-    }));
+  const handleDone = () => {
+    console.log("Selected body parts:", selectedParts); // log for debugging
+    navigate("/pain-summary", { state: { selectedParts } });
   };
 
-  const removeSelectedLocation = (part: string) => {
-    setSelectedLocations(prev => prev.filter(p => p !== part));
-    setBodyPartIntensity(prev => {
-      const updated = { ...prev };
-      delete updated[part];
-      return updated;
-    });
-  };
-
-  const getHeatMapColor = (areaName: string) => {
-    const intensity = bodyPartIntensity[areaName];
-    if (!intensity) return "transparent";
-    
-    const opacity = intensity / 10;
-    if (intensity <= 3) return `hsla(var(--success), ${opacity})`;
-    if (intensity <= 6) return `hsla(var(--warning), ${opacity})`;
-    return `hsla(var(--destructive), ${opacity})`;
-  };
-
-  const handleSubmit = () => {
-    if (selectedLocations.length === 0) return;
+  const handleLogPain = () => {
+    if (selectedParts.length === 0) return;
 
     const newLog = {
       id: Date.now(),
-      locations: selectedLocations,
+      locations: selectedParts,
       severity: severity[0],
       date: new Date().toISOString(),
-      timestamp: new Date().toLocaleString()
+      timestamp: new Date().toLocaleString(),
     };
 
     setRecentLogs([newLog, ...recentLogs.slice(0, 4)]);
-    
-    // Here you would typically save to Supabase
-    console.log("Pain log:", newLog);
-    
-    // Reset form
-    setSelectedLocations([]);
-    setBodyPartIntensity({});
+    setSelectedParts([]);
     setSeverity([5]);
   };
 
@@ -97,224 +69,117 @@ const EnhancedPainPage = () => {
     <div className="min-h-screen bg-background pb-20 px-4 pt-6">
       <div className="max-w-md mx-auto space-y-6">
         {/* Header */}
-        <motion.div 
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold gradient-text font-poppins mb-2">
-            Pain Tracker
-          </h1>
-          <p className="text-muted-foreground">
-            Track multiple pain points to get comprehensive relief recommendations
-          </p>
+        <motion.div className="text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="text-3xl font-bold gradient-text font-poppins mb-2">Pain Tracker</h1>
+          <p className="text-muted-foreground">Select areas of pain on the body</p>
         </motion.div>
 
-        {/* Interactive Body Map with Heat Map */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <Card className="glass">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-tertiary" />
-                Interactive Body Map
-                <Badge variant="secondary" className="ml-auto">Click to select</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Enhanced SVG Body with Heat Map */}
-              <div className="relative mx-auto w-48 h-64 mb-6">
-                <svg viewBox="0 0 200 300" className="w-full h-full cursor-pointer">
-                  <defs>
-                    <linearGradient id="bodyOutline" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity="0.2" />
-                    </linearGradient>
-                  </defs>
-                  
-                  {/* Body outline */}
+        {/* Body Map */}
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle>Interactive Female Body</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative mx-auto w-56 h-[600px] mb-4">
+              <svg viewBox="0 0 200 320" className="w-full h-full">
+                {bodyAreas.map(area => (
                   <path
-                    d="M100 20 C110 20 120 30 120 40 C120 50 110 60 100 60 C90 60 80 50 80 40 C80 30 90 20 100 20 Z M100 60 L90 75 L90 150 L85 200 L85 250 L90 280 L110 280 L115 250 L115 200 L110 150 L110 75 Z M90 75 L70 95 L65 130 L70 160 L90 150 M110 75 L130 95 L135 130 L130 160 L110 150"
-                    fill="url(#bodyOutline)"
-                    stroke="hsl(var(--border))"
-                    strokeWidth="1"
+                    key={area.id}
+                    d={area.path}
+                    fill={selectedParts.includes(area.name) ? "rgba(255,0,0,0.5)" : "#fcd5d5"} // light pink default
+                    stroke="black"
+                    strokeWidth={1.5}
+                    className="cursor-pointer transition-all duration-200"
+                    onClick={() => togglePart(area.name)}
                   />
-
-                  {/* Clickable areas with heat map */}
-                  {bodyAreas.map((area) => (
-                    <path
-                      key={area.id}
-                      d={area.path}
-                      fill={getHeatMapColor(area.name)}
-                      stroke={selectedLocations.includes(area.name) ? "hsl(var(--primary))" : "transparent"}
-                      strokeWidth="2"
-                      className="cursor-pointer hover:stroke-primary/50 transition-all duration-200"
-                      onClick={() => handleBodyAreaClick(area.name)}
-                    />
-                  ))}
-                </svg>
-              </div>
-
-              {/* Body part quick select */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {bodyParts.map((part) => (
-                  <Button
-                    key={part}
-                    variant={selectedLocations.includes(part) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleBodyPartClick(part)}
-                    className="text-xs"
-                  >
-                    {part}
-                  </Button>
                 ))}
-              </div>
+              </svg>
+            </div>
 
-              {/* Selected locations */}
-              {selectedLocations.length > 0 && (
-                <motion.div 
-                  className="mt-4 p-3 rounded-lg bg-muted/30"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <p className="text-sm text-foreground font-medium mb-2">
-                    Selected Areas ({selectedLocations.length}):
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedLocations.map((location) => (
-                      <Badge 
-                        key={location} 
-                        variant="secondary" 
-                        className="flex items-center gap-1"
-                      >
-                        {location}
-                        <X 
-                          className="w-3 h-3 cursor-pointer hover:text-destructive" 
-                          onClick={() => removeSelectedLocation(location)}
-                        />
-                      </Badge>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Pain Severity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <Card className="glass">
-            <CardHeader>
-              <CardTitle>Pain Intensity</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Level: {severity[0]}/10
-                </Label>
-                <Slider
-                  value={severity}
-                  onValueChange={setSeverity}
-                  max={10}
-                  min={1}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Mild</span>
-                  <span>Moderate</span>
-                  <span>Severe</span>
+            {/* Selected parts badges */}
+            {selectedParts.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-foreground mb-2">
+                  Selected Areas ({selectedParts.length}):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedParts.map(part => (
+                    <Badge key={part} variant="secondary" className="flex items-center gap-1">
+                      {part}
+                      <X className="w-3 h-3 cursor-pointer hover:text-destructive" onClick={() => togglePart(part)} />
+                    </Badge>
+                  ))}
                 </div>
               </div>
+            )}
 
-              <Button 
-                onClick={handleSubmit}
-                disabled={selectedLocations.length === 0}
-                variant="hero"
-                className="w-full"
-              >
-                Log Pain {selectedLocations.length > 0 && `(${selectedLocations.length} areas)`}
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
+          </CardContent>
+        </Card>
+
+        {/* Pain Severity */}
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle>Pain Intensity</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Level: {severity[0]}/10</Label>
+              <Slider value={severity} onValueChange={setSeverity} max={10} min={1} step={1} className="w-full" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Mild</span>
+                <span>Moderate</span>
+                <span>Severe</span>
+              </div>
+            </div>
+            <Button onClick={handleLogPain} disabled={selectedParts.length === 0} variant="hero" className="w-full">
+              Log Pain ({selectedParts.length} areas)
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Recent Logs */}
         {recentLogs.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <Card className="glass">
-              <CardHeader>
-                <CardTitle>Recent Pain Logs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentLogs.map((log) => (
-                    <motion.div
-                      key={log.id}
-                      className="flex justify-between items-center p-3 rounded-lg bg-muted/20"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div>
-                        <div className="flex flex-wrap gap-1 mb-1">
-                          {log.locations.map((location: string) => (
-                            <Badge key={location} variant="outline" className="text-xs">
-                              {location}
-                            </Badge>
-                          ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{log.timestamp}</p>
+          <Card className="glass">
+            <CardHeader>
+              <CardTitle>Recent Pain Logs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {recentLogs.map(log => (
+                  <motion.div key={log.id} className="flex justify-between items-center p-3 rounded-lg bg-muted/20"
+                    initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
+                    <div>
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {log.locations.map((location: string) => (
+                          <Badge key={location} variant="outline" className="text-xs">{location}</Badge>
+                        ))}
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{log.severity}/10</p>
-                        <div className="flex gap-1">
-                          {[...Array(10)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={`w-1 h-3 rounded ${
-                                i < log.severity ? 'bg-tertiary' : 'bg-muted'
-                              }`}
-                            />
-                          ))}
-                        </div>
+                      <p className="text-xs text-muted-foreground">{log.timestamp}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{log.severity}/10</p>
+                      <div className="flex gap-1">
+                        {[...Array(10)].map((_, i) => (
+                          <div key={i} className={`w-1 h-3 rounded ${i < log.severity ? 'bg-tertiary' : 'bg-muted'}`} />
+                        ))}
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* AI Insights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <AgentInsights 
-            category="Pain Relief"
-            insights={recentLogs.length > 0 ? [
-              "Multiple pain points detected - consider holistic treatment",
-              "Lower back pain is most frequent - focus on posture",
-              "Pain levels tend to increase in the evening hours"
-            ] : undefined}
-          />
-        </motion.div>
+        <AgentInsights
+          category="Pain Relief"
+          insights={recentLogs.length > 0 ? [
+            "Multiple pain points detected - consider holistic treatment",
+            "Lower back pain is most frequent - focus on posture",
+            "Pain levels tend to increase in the evening hours"
+          ] : undefined}
+        />
       </div>
     </div>
   );
