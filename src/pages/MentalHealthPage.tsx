@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import AgentInsights from "@/components/AgentInsights";
-import { Brain, Send, Smile, Meh, Frown } from "lucide-react";
+import { Brain, Send, Smile, Meh, Frown, X } from "lucide-react";
 
 interface ChatMessage {
   id: number;
@@ -20,6 +20,8 @@ const MentalHealthPage = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   const moodEmojis = [
     { value: 1, emoji: "😢", label: "Very Low", color: "text-destructive" },
     { value: 2, emoji: "😔", label: "Low", color: "text-warning" },
@@ -28,6 +30,7 @@ const MentalHealthPage = () => {
     { value: 5, emoji: "😄", label: "Excellent", color: "text-primary" },
   ];
 
+  // Effect to fetch initial chat history
   useEffect(() => {
     const fetchChatHistory = async () => {
       setLoading(true);
@@ -48,9 +51,16 @@ const MentalHealthPage = () => {
     fetchChatHistory();
   }, []);
 
+  // Effect to auto-scroll to the bottom when new messages are added
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
   const handleMoodSelect = (moodValue: number) => {
     setMood(moodValue);
-
+    
     const newLog = {
       id: Date.now(),
       mood: moodValue,
@@ -117,6 +127,15 @@ const MentalHealthPage = () => {
     }
   };
 
+  const handleClearChat = async () => {
+    try {
+      await fetch("http://localhost:8000/api/clear_history", { method: "POST" });
+      setChatMessages([]);
+    } catch (error) {
+      console.error("Failed to clear chat history:", error);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -164,7 +183,7 @@ const MentalHealthPage = () => {
                 </button>
               ))}
             </div>
-
+            
             {mood && (
               <div className="mt-4 p-3 rounded-lg bg-tertiary/10 border border-tertiary/20">
                 <p className="text-sm text-foreground">
@@ -177,12 +196,21 @@ const MentalHealthPage = () => {
 
         {/* Chatbot Interface */}
         <Card className="glass animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle>AI Wellness Chat</CardTitle>
+            <Button
+              onClick={handleClearChat}
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8"
+            >
+              <X className="w-4 h-4" />
+              <span className="sr-only">Clear Chat</span>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <ScrollArea className="h-64 w-full">
-              <div className="space-y-3 pr-4">
+              <div ref={chatContainerRef} className="space-y-3 pr-4">
                 {chatMessages.map((message) => (
                   <div
                     key={message.id}
@@ -213,7 +241,7 @@ const MentalHealthPage = () => {
                 )}
               </div>
             </ScrollArea>
-
+            
             <div className="flex gap-2">
               <Input
                 value={inputMessage}
@@ -269,7 +297,7 @@ const MentalHealthPage = () => {
 
         {/* AI Insights */}
         <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <AgentInsights
+          <AgentInsights 
             category="Mental Wellness"
             insights={moodLogs.length > 0 ? [
               "Your mood tends to improve in the afternoons",
