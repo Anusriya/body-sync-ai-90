@@ -15,10 +15,12 @@ interface ChatMessage {
 
 const MentalHealthPage = () => {
   const [mood, setMood] = useState<number | null>(null);
+  const [whatWasOnYourMind, setWhatWasOnYourMind] = useState<string>(""); // New state for the user's thoughts
   const [moodLogs, setMoodLogs] = useState<any[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [insights, setInsights] = useState<string[]>([]); // New state for dynamic insights
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +31,26 @@ const MentalHealthPage = () => {
     { value: 4, emoji: "😊", label: "Good", color: "text-success" },
     { value: 5, emoji: "😄", label: "Excellent", color: "text-primary" },
   ];
+
+  // Function to fetch dynamic insights from the backend
+  const fetchInsights = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/get_insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Send relevant data to the backend for analysis
+        body: JSON.stringify({ moodLogs, chatMessages }), 
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setInsights(data.insights);
+      }
+    } catch (error) {
+      console.error("Failed to fetch insights:", error);
+      // You can set a default message on failure
+      setInsights(["Sorry, I'm unable to get new insights right now."]); 
+    }
+  };
 
   // Effect to fetch initial chat history
   useEffect(() => {
@@ -49,6 +71,8 @@ const MentalHealthPage = () => {
       }
     };
     fetchChatHistory();
+    // Also fetch insights on initial load
+    fetchInsights();
   }, []);
 
   // Effect to auto-scroll to the bottom when new messages are added
@@ -58,6 +82,11 @@ const MentalHealthPage = () => {
     }
   }, [chatMessages]);
 
+  // Effect to fetch new insights whenever mood logs or chat messages change
+  useEffect(() => {
+    fetchInsights();
+  }, [moodLogs, chatMessages]);
+
   const handleMoodSelect = (moodValue: number) => {
     setMood(moodValue);
     
@@ -65,11 +94,13 @@ const MentalHealthPage = () => {
       id: Date.now(),
       mood: moodValue,
       date: new Date().toISOString(),
-      timestamp: new Date().toLocaleDateString()
+      timestamp: new Date().toLocaleDateString(),
+      whatWasOnYourMind: whatWasOnYourMind // Include the new data in the log
     };
 
     setMoodLogs([newLog, ...moodLogs.slice(0, 6)]);
     console.log("Mood log:", newLog);
+    setWhatWasOnYourMind(""); // Clear the input field after logging
   };
 
   const handleSendMessage = async () => {
@@ -184,6 +215,19 @@ const MentalHealthPage = () => {
               ))}
             </div>
             
+            <div className="mt-4">
+              <label htmlFor="whatWasOnYourMind" className="text-sm font-medium text-foreground/90">
+                What was on your mind? (optional)
+              </label>
+              <Input
+                id="whatWasOnYourMind"
+                value={whatWasOnYourMind}
+                onChange={(e) => setWhatWasOnYourMind(e.target.value)}
+                placeholder="Share your thoughts..."
+                className="glass mt-2"
+              />
+            </div>
+          
             {mood && (
               <div className="mt-4 p-3 rounded-lg bg-tertiary/10 border border-tertiary/20">
                 <p className="text-sm text-foreground">
@@ -280,6 +324,11 @@ const MentalHealthPage = () => {
                     >
                       <div>
                         <p className="text-sm font-medium">{log.timestamp}</p>
+                        {log.whatWasOnYourMind && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Thoughts: {log.whatWasOnYourMind}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{moodData?.emoji}</span>
@@ -295,15 +344,12 @@ const MentalHealthPage = () => {
           </Card>
         )}
 
-        {/* AI Insights */}
+        {/* AI Insights - now using dynamic insights */}
         <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <AgentInsights 
             category="Mental Wellness"
-            insights={moodLogs.length > 0 ? [
-              "Your mood tends to improve in the afternoons",
-              "Consider practicing meditation for 10 minutes daily",
-              "Social connections seem to boost your emotional state"
-            ] : undefined}
+            insights={insights} // Pass the dynamic insights state
+            onRefresh={fetchInsights} // Pass the new fetch function to the refresh button
           />
         </div>
       </div>
