@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,23 +8,17 @@ import { Brain, Send, Smile, Meh, Frown } from "lucide-react";
 
 interface ChatMessage {
   id: number;
-  type: 'user' | 'bot';
-  content: string;
+  speaker: string;
+  text: string;
   timestamp: string;
 }
 
 const MentalHealthPage = () => {
   const [mood, setMood] = useState<number | null>(null);
   const [moodLogs, setMoodLogs] = useState<any[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: 1,
-      type: 'bot',
-      content: "Hello! I'm here to support your mental wellness journey. How are you feeling today?",
-      timestamp: new Date().toLocaleTimeString()
-    }
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const moodEmojis = [
     { value: 1, emoji: "😢", label: "Very Low", color: "text-destructive" },
@@ -34,9 +28,29 @@ const MentalHealthPage = () => {
     { value: 5, emoji: "😄", label: "Excellent", color: "text-primary" },
   ];
 
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("http://localhost:8000/api/get_history");
+        const data = await response.json();
+        if (response.ok) {
+          setChatMessages(data.messages);
+        } else {
+          console.error("Failed to fetch chat history:", data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch chat history:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchChatHistory();
+  }, []);
+
   const handleMoodSelect = (moodValue: number) => {
     setMood(moodValue);
-    
+
     const newLog = {
       id: Date.now(),
       mood: moodValue,
@@ -45,38 +59,62 @@ const MentalHealthPage = () => {
     };
 
     setMoodLogs([newLog, ...moodLogs.slice(0, 6)]);
-    
-    // Here you would typically save to Supabase
     console.log("Mood log:", newLog);
   };
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || loading) return;
 
+    const userText = inputMessage;
     const userMessage: ChatMessage = {
       id: Date.now(),
-      type: 'user',
-      content: inputMessage,
+      speaker: 'user',
+      text: userText,
       timestamp: new Date().toLocaleTimeString()
     };
 
-    setChatMessages([...chatMessages, userMessage]);
-    
-    // Here you would typically call the /chatbot API
-    console.log("Chat message:", userMessage);
-    
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse: ChatMessage = {
-        id: Date.now() + 1,
-        type: 'bot',
-        content: "Thank you for sharing. I understand that can be challenging. Would you like to explore some coping strategies?",
+    setChatMessages(prev => [...prev, userMessage]);
+    setInputMessage("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/api/send_message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userText })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const botResponse: ChatMessage = {
+          id: Date.now(),
+          speaker: data.speaker,
+          text: data.reply,
+          timestamp: data.timestamp
+        };
+        setChatMessages(prev => [...prev, botResponse]);
+      } else {
+        console.error("API error:", response.status, response.statusText);
+        const errorBotResponse: ChatMessage = {
+          id: Date.now(),
+          speaker: 'bot',
+          text: "Sorry, I'm having trouble connecting right now. Please try again later.",
+          timestamp: new Date().toLocaleTimeString()
+        };
+        setChatMessages(prev => [...prev, errorBotResponse]);
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      const errorBotResponse: ChatMessage = {
+        id: Date.now(),
+        speaker: 'bot',
+        text: "Sorry, I'm having trouble connecting right now. Please try again later.",
         timestamp: new Date().toLocaleTimeString()
       };
-      setChatMessages(prev => [...prev, botResponse]);
-    }, 1000);
-
-    setInputMessage("");
+      setChatMessages(prev => [...prev, errorBotResponse]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -126,7 +164,7 @@ const MentalHealthPage = () => {
                 </button>
               ))}
             </div>
-            
+
             {mood && (
               <div className="mt-4 p-3 rounded-lg bg-tertiary/10 border border-tertiary/20">
                 <p className="text-sm text-foreground">
@@ -149,26 +187,33 @@ const MentalHealthPage = () => {
                   <div
                     key={message.id}
                     className={`flex ${
-                      message.type === 'user' ? 'justify-end' : 'justify-start'
+                      message.speaker === 'user' ? 'justify-end' : 'justify-start'
                     }`}
                   >
                     <div
                       className={`max-w-[80%] p-3 rounded-lg ${
-                        message.type === 'user'
+                        message.speaker === 'user'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-foreground'
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm">{message.text}</p>
                       <p className="text-xs opacity-70 mt-1">
                         {message.timestamp}
                       </p>
                     </div>
                   </div>
                 ))}
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] p-3 rounded-lg bg-muted text-foreground">
+                      <p className="text-sm italic">Typing...</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
-            
+
             <div className="flex gap-2">
               <Input
                 value={inputMessage}
@@ -176,10 +221,11 @@ const MentalHealthPage = () => {
                 onKeyPress={handleKeyPress}
                 placeholder="Share your thoughts..."
                 className="glass border-border/50 flex-1"
+                disabled={loading}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputMessage.trim()}
+                disabled={!inputMessage.trim() || loading}
                 size="icon"
                 variant="hero"
               >
@@ -223,7 +269,7 @@ const MentalHealthPage = () => {
 
         {/* AI Insights */}
         <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <AgentInsights 
+          <AgentInsights
             category="Mental Wellness"
             insights={moodLogs.length > 0 ? [
               "Your mood tends to improve in the afternoons",
