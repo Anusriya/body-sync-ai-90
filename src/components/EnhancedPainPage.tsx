@@ -22,7 +22,8 @@
         }
         .gradient-text {
             background: linear-gradient(to right, #ec4899, #8b5cf6);
-            -webkit-background-clip: text;
+            background-clip: text; /* Standard property */
+            -webkit-background-clip: text; /* Vendor prefix for browser compatibility */
             -webkit-text-fill-color: transparent;
         }
     </style>
@@ -428,3 +429,5 @@
     </script>
 </body>
 </html>
+
+
