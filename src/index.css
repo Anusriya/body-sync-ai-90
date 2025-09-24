@@ -1,42 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
+/* Sync'd Design System - Futuristic Wellness Theme */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
+    /* Base Colors - Deep Space Theme */
+    --background: 222 20% 8%;
+    --foreground: 210 40% 98%;
+    --surface: 225 25% 12%;
+    
+    /* Card System */
+    --card: 225 25% 12%;
+    --card-foreground: 210 40% 98%;
+    --glass: 225 25% 15%;
+    
+    /* Interactive Elements */
+    --popover: 225 25% 12%;
+    --popover-foreground: 210 40% 98%;
+    
+    /* Brand Colors - Wellness Gradients */
+    --primary: 180 100% 50%;  /* Teal */
+    --primary-foreground: 222 20% 8%;
+    --primary-glow: 180 100% 60%;
+    
+    --secondary: 270 100% 70%;  /* Violet */
+    --secondary-foreground: 210 40% 98%;
+    --secondary-glow: 270 100% 80%;
+    
+    --tertiary: 320 100% 70%;  /* Pink */
+    --tertiary-foreground: 210 40% 98%;
+    --tertiary-glow: 320 100% 80%;
+    
+    /* Status Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 45 93% 47%;
+    --warning-foreground: 222 20% 8%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    
+    /* Neutral Palette */
+    --muted: 225 15% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 225 20% 18%;
+    --accent-foreground: 210 40% 98%;
+    
+    /* Form Elements */
+    --border: 225 20% 25%;
+    --input: 225 25% 15%;
+    --ring: 180 100% 50%;
+    
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(var(--tertiary)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--glass) / 0.7) 0%, hsl(var(--glass) / 0.3) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(var(--primary-glow) / 0.3) 0%, transparent 70%);
+    
+    /* Shadows & Effects */
+    --shadow-glass: 0 8px 32px 0 hsl(var(--primary) / 0.2);
+    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
+    --shadow-soft: 0 4px 20px 0 hsl(225 25% 8% / 0.3);
+    
+    /* Animation Timings */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +131,68 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+}
+
+@layer components {
+  /* Glass morphism base */
+  .glass {
+    background: var(--gradient-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.3);
+    box-shadow: var(--shadow-glass);
+  }
+  
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Interactive elements */
+  .interactive {
+    transition: var(--transition-smooth);
+  }
+  
+  .interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* AI waveform animation */
+  @keyframes wave {
+    0%, 100% { height: 20px; }
+    50% { height: 40px; }
+  }
+  
+  .ai-wave {
+    width: 4px;
+    background: var(--gradient-hero);
+    animation: wave 1.5s ease-in-out infinite;
+  }
+  
+  .ai-wave:nth-child(2) { animation-delay: 0.1s; }
+  .ai-wave:nth-child(3) { animation-delay: 0.2s; }
+  .ai-wave:nth-child(4) { animation-delay: 0.3s; }
+  .ai-wave:nth-child(5) { animation-delay: 0.4s; }
+  
+  /* Pulse glow animation */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
+  }
+  
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
   }
 }
